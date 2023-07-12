@@ -20,22 +20,10 @@ class _HomePageState extends State<HomePage> {
 
   TextEditingController nameController = TextEditingController();
   TextEditingController areaController = TextEditingController();
-  List<String> names = [
-    '영식',
-    '큰별',
-    '완식',
-    '성균',
-    '혜원',
-    '창준',
-    '민지',
-    '재성',
-    '예나',
-    '원우',
-    '호영',
-    '보민'
-  ];
+  Rx<List<String>> names = Rx<List<String>>(
+      ['영식', '큰별', '완식', '성균', '혜원', '창준', '민지', '재성', '예나', '원우', '호영', '보민']);
 
-  List<String> areas = [
+  Rx<List<String>> areas = Rx<List<String>>([
     '청소기',
     '설거지',
     '밀대',
@@ -48,10 +36,8 @@ class _HomePageState extends State<HomePage> {
     '닦기',
     '필터',
     '먼지3'
-  ];
-  List<String> randomData = [];
-  String newName = '';
-  String newArea = '';
+  ]);
+
   @override
   void initState() {
     super.initState();
@@ -69,16 +55,15 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 200),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: _buildAppBar(context),
-        body: LayoutBuilder(builder: (context, constraints) {
-          return _buildBody(context, constraints);
-        }),
-      ),
-    );
+    return Obx(() => Padding(
+          padding: EdgeInsets.symmetric(horizontal: controller.h.value),
+          child: Scaffold(
+              backgroundColor: Colors.transparent,
+              appBar: _buildAppBar(context),
+              body: LayoutBuilder(builder: (context, constraints) {
+                return _buildBody(context, constraints);
+              })),
+        ));
   }
 
   //AppBar Methods:-------------------------------------------------------------
@@ -272,6 +257,20 @@ class _HomePageState extends State<HomePage> {
       cursor: SystemMouseCursors.click,
       child: InkWell(
         onTap: () {
+          if (names.value.length != areas.value.length) {
+            AlertDialog(
+              title: Text('안내'),
+              content: Text('회사 인원이랑 청소구역 수가 맞지 않아'),
+              actions: [
+                TextButton(
+                  child: Text('Close'),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                  },
+                ),
+              ],
+            );
+          }
           controller.randomScreenChange.value =
               !controller.randomScreenChange.value;
           generateRandomData();
@@ -299,14 +298,14 @@ class _HomePageState extends State<HomePage> {
               labelText: '이름',
             ),
             onSubmitted: (value) {
-              if (names.length >= 12) {
+              if (names.value.length >= 12) {
                 nameController.clear();
                 showDialog(
                     context: context,
                     builder: (BuildContext context) {
                       return AlertDialog(
                         title: Text('안내'),
-                        content: Text('참내!!'),
+                        content: Text('참내!!참내 회사 사람이 몇 명인지도 몰라?'),
                         actions: [
                           TextButton(
                             child: Text('Close'),
@@ -318,7 +317,7 @@ class _HomePageState extends State<HomePage> {
                       );
                     });
               } else {
-                names.add(value);
+                names.value.add(value);
                 nameController.clear();
               }
             },
@@ -334,7 +333,28 @@ class _HomePageState extends State<HomePage> {
               labelText: '청소구역',
             ),
             onSubmitted: (value) {
-              areas.add(value);
+              if (names.value.length >= 12) {
+                areaController.clear();
+                showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('안내'),
+                        content: Text('참내!!회사 사람이 12명인데 청소구역은 왜 더 정해?'),
+                        actions: [
+                          TextButton(
+                            child: Text('Close'),
+                            onPressed: () {
+                              Navigator.of(context).pop(); // Close the dialog
+                            },
+                          ),
+                        ],
+                      );
+                    });
+              } else {
+                areas.value.add(value);
+                areaController.clear();
+              }
             },
           ),
         ),
@@ -367,37 +387,37 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildEducation() {
-    return Obx(() => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            controller.randomScreenChange.value
-                ? _buildRandomScreenWidget()
-                : _buildEducationContainerHeading(),
-            SizedBox(height: 8.0),
-          ],
-        ));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        controller.randomScreenChange.value
+            ? _buildRandomScreenWidget()
+            : _buildEducationContainerHeading(),
+        SizedBox(height: 8.0),
+      ],
+    );
   }
 
   Widget _buildRandomScreenWidget() {
-    return Container(
-      height: 300,
-      child: ListView.builder(
-          itemCount: randomData.length,
-          itemBuilder: (BuildContext context, int index) {
-            return Text(randomData[index]);
-          }),
-    );
+    return Obx(() => Container(
+          height: 300,
+          child: ListView.builder(
+              itemCount: controller.randomData.value.length,
+              itemBuilder: (BuildContext context, int index) {
+                return Text(controller.randomData.value[index]);
+              }),
+        ));
   }
 
   void removeNameData(int index) {
     setState(() {
-      names.removeAt(index);
+      names.value.removeAt(index);
     });
   }
 
   void removeAreaData(int index) {
     setState(() {
-      areas.removeAt(index);
+      areas.value.removeAt(index);
     });
   }
 
@@ -410,13 +430,13 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               height: 300,
               child: ListView.builder(
-                  itemCount: names.length,
+                  itemCount: names.value.length,
                   itemBuilder: (BuildContext context, int index) {
                     return InkWell(
                         onTap: () {
                           removeNameData(index);
                         },
-                        child: Text('${index + 1}  ${names[index]}'));
+                        child: Text('${index + 1}  ${names.value[index]}'));
                   }),
             ),
           ),
@@ -424,13 +444,13 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               height: 300,
               child: ListView.builder(
-                  itemCount: areas.length,
+                  itemCount: areas.value.length,
                   itemBuilder: (BuildContext context, int index) {
                     return InkWell(
                         onTap: () {
                           removeAreaData(index);
                         },
-                        child: Text('${index + 1}  ${areas[index]}'));
+                        child: Text('${index + 1}  ${areas.value[index]}'));
                   }),
             ),
           ),
@@ -441,8 +461,8 @@ class _HomePageState extends State<HomePage> {
 
   void generateRandomData() {
     Random random = Random();
-    List<String> availableNames = List.from(names);
-    List<String> availableAreas = List.from(areas);
+    List<String> availableNames = List.from(names.value);
+    List<String> availableAreas = List.from(areas.value);
     List<String> tempData = [];
     while (availableNames.isNotEmpty && availableAreas.isNotEmpty) {
       String name = availableNames[random.nextInt(availableNames.length)];
@@ -453,7 +473,7 @@ class _HomePageState extends State<HomePage> {
       availableAreas.remove(area);
     }
     setState(() {
-      randomData = tempData;
+      controller.randomData.value = tempData;
     });
   }
 }
