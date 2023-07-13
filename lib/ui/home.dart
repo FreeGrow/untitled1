@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:untitled1/ui/home_controller.dart';
 
 import '../constants/assets.dart';
 import '../constants/fonts.dart';
@@ -16,14 +15,24 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  HomeController controller = HomeController();
-
   TextEditingController nameController = TextEditingController();
   TextEditingController areaController = TextEditingController();
-  Rx<List<String>> names = Rx<List<String>>(
-      ['영식', '큰별', '완식', '성균', '혜원', '창준', '민지', '재성', '예나', '원우', '호영', '보민']);
+  List<String> names = [
+    '영식',
+    '큰별',
+    '완식',
+    '성균',
+    '혜원',
+    '창준',
+    '민지',
+    '재성',
+    '예나',
+    '원우',
+    '호영',
+    '보민'
+  ];
 
-  Rx<List<String>> areas = Rx<List<String>>([
+  List<String> areas = [
     '청소기',
     '설거지',
     '밀대',
@@ -36,12 +45,14 @@ class _HomePageState extends State<HomePage> {
     '닦기',
     '필터',
     '먼지3'
-  ]);
+  ];
+  List<String> randomData = [];
+  List<String> tempData = [];
+  bool randomScreenChange = false;
 
   @override
   void initState() {
     super.initState();
-    Get.put(controller);
     nameController = TextEditingController();
     areaController = TextEditingController();
   }
@@ -55,15 +66,15 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => Padding(
-          padding: EdgeInsets.symmetric(horizontal: controller.h.value),
-          child: Scaffold(
-              backgroundColor: Colors.transparent,
-              appBar: _buildAppBar(context),
-              body: LayoutBuilder(builder: (context, constraints) {
-                return _buildBody(context, constraints);
-              })),
-        ));
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 200),
+      child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: _buildAppBar(context),
+          body: LayoutBuilder(builder: (context, constraints) {
+            return _buildBody(context, constraints);
+          })),
+    );
   }
 
   //AppBar Methods:-------------------------------------------------------------
@@ -81,8 +92,6 @@ class _HomePageState extends State<HomePage> {
   Widget _buildTitle() {
     return RichText(
       text: TextSpan(
-        // Note: Styles for TextSpans must be explicitly defined.
-        // Child text spans will inherit styles from parent
         style: TextStyle(
           fontSize: 14.0,
           color: Colors.black,
@@ -257,28 +266,30 @@ class _HomePageState extends State<HomePage> {
       cursor: SystemMouseCursors.click,
       child: InkWell(
         onTap: () {
-          if (names.value.length != areas.value.length) {
-            AlertDialog(
-              title: Text('안내'),
-              content: Text('회사 인원이랑 청소구역 수가 맞지 않아'),
-              actions: [
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Close the dialog
-                  },
-                ),
-              ],
-            );
+          if (names.length != areas.length) {
+            showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('안내'),
+                    content: Text('회사 인원이랑 청소구역 수가 맞지 않아'),
+                    actions: [
+                      TextButton(
+                        child: Text('Close'),
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Close the dialog
+                        },
+                      ),
+                    ],
+                  );
+                });
+          } else {
+            randomScreenChange = !randomScreenChange;
+            generateRandomData();
           }
-          controller.randomScreenChange.value =
-              !controller.randomScreenChange.value;
-          generateRandomData();
         },
         child: Text(
-          controller.randomScreenChange.value
-              ? Strings.retry
-              : Strings.headline,
+          randomScreenChange ? Strings.retry : Strings.headline,
           style: TextStyles.sub_heading,
         ),
       ),
@@ -292,13 +303,14 @@ class _HomePageState extends State<HomePage> {
         Container(
           width: 300,
           child: TextField(
+            readOnly: !randomScreenChange ? false : true,
             controller: nameController,
             decoration: InputDecoration(
               border: OutlineInputBorder(),
               labelText: '이름',
             ),
             onSubmitted: (value) {
-              if (names.value.length >= 12) {
+              if (names.length >= 12) {
                 nameController.clear();
                 showDialog(
                     context: context,
@@ -317,8 +329,9 @@ class _HomePageState extends State<HomePage> {
                       );
                     });
               } else {
-                names.value.add(value);
+                names.add(value);
                 nameController.clear();
+                setState(() {});
               }
             },
           ),
@@ -327,13 +340,14 @@ class _HomePageState extends State<HomePage> {
         Container(
           width: 300,
           child: TextField(
+            readOnly: !randomScreenChange ? false : true,
             controller: areaController,
             decoration: InputDecoration(
               border: OutlineInputBorder(),
               labelText: '청소구역',
             ),
             onSubmitted: (value) {
-              if (names.value.length >= 12) {
+              if (areas.length >= 12) {
                 areaController.clear();
                 showDialog(
                     context: context,
@@ -352,8 +366,9 @@ class _HomePageState extends State<HomePage> {
                       );
                     });
               } else {
-                areas.value.add(value);
+                areas.add(value);
                 areaController.clear();
+                setState(() {});
               }
             },
           ),
@@ -375,22 +390,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSkillChip(BuildContext context, String label) {
-    return Chip(
-      label: Text(
-        label,
-        style: TextStyles.chip.copyWith(
-          fontSize: ResponsiveWidget.isSmallScreen(context) ? 10.0 : 11.0,
-        ),
-      ),
-    );
-  }
-
   Widget _buildEducation() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        controller.randomScreenChange.value
+        randomScreenChange
             ? _buildRandomScreenWidget()
             : _buildEducationContainerHeading(),
         SizedBox(height: 8.0),
@@ -399,25 +403,25 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildRandomScreenWidget() {
-    return Obx(() => Container(
-          height: 300,
-          child: ListView.builder(
-              itemCount: controller.randomData.value.length,
-              itemBuilder: (BuildContext context, int index) {
-                return Text(controller.randomData.value[index]);
-              }),
-        ));
+    return Container(
+      height: 300,
+      child: ListView.builder(
+          itemCount: randomData.length,
+          itemBuilder: (BuildContext context, int index) {
+            return Text(randomData[index]);
+          }),
+    );
   }
 
   void removeNameData(int index) {
     setState(() {
-      names.value.removeAt(index);
+      names.removeAt(index);
     });
   }
 
   void removeAreaData(int index) {
     setState(() {
-      areas.value.removeAt(index);
+      areas.removeAt(index);
     });
   }
 
@@ -430,13 +434,13 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               height: 300,
               child: ListView.builder(
-                  itemCount: names.value.length,
+                  itemCount: names.length,
                   itemBuilder: (BuildContext context, int index) {
                     return InkWell(
                         onTap: () {
                           removeNameData(index);
                         },
-                        child: Text('${index + 1}  ${names.value[index]}'));
+                        child: Text('${index + 1}  ${names[index]}'));
                   }),
             ),
           ),
@@ -444,13 +448,13 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               height: 300,
               child: ListView.builder(
-                  itemCount: areas.value.length,
+                  itemCount: areas.length,
                   itemBuilder: (BuildContext context, int index) {
                     return InkWell(
                         onTap: () {
                           removeAreaData(index);
                         },
-                        child: Text('${index + 1}  ${areas.value[index]}'));
+                        child: Text('${index + 1}  ${areas[index]}'));
                   }),
             ),
           ),
@@ -461,9 +465,9 @@ class _HomePageState extends State<HomePage> {
 
   void generateRandomData() {
     Random random = Random();
-    List<String> availableNames = List.from(names.value);
-    List<String> availableAreas = List.from(areas.value);
-    List<String> tempData = [];
+    List<String> availableNames = List.from(names);
+    List<String> availableAreas = List.from(areas);
+    tempData = [];
     while (availableNames.isNotEmpty && availableAreas.isNotEmpty) {
       String name = availableNames[random.nextInt(availableNames.length)];
       String area = availableAreas[random.nextInt(availableAreas.length)];
@@ -473,7 +477,7 @@ class _HomePageState extends State<HomePage> {
       availableAreas.remove(area);
     }
     setState(() {
-      controller.randomData.value = tempData;
+      randomData = tempData;
     });
   }
 }
