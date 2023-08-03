@@ -1,13 +1,13 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 import '../constants/assets.dart';
 import '../constants/fonts.dart';
 import '../constants/strings.dart';
 import '../constants/text_styles.dart';
 import '../widgets/responsive_widget.dart';
+import 'lottery_draw.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -15,6 +15,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  bool? nextScreen = false;
+
   TextEditingController nameController = TextEditingController();
   TextEditingController areaController = TextEditingController();
   List<String> names = [
@@ -72,7 +74,9 @@ class _HomePageState extends State<HomePage> {
           backgroundColor: Colors.transparent,
           appBar: _buildAppBar(context),
           body: LayoutBuilder(builder: (context, constraints) {
-            return _buildBody(context, constraints);
+            return nextScreen == true
+                ? LotteryDraw()
+                : _buildBody(context, constraints);
           })),
     );
   }
@@ -121,14 +125,20 @@ class _HomePageState extends State<HomePage> {
             color: Color(0xFF50AFC0),
           ),
         ),
-        onPressed: () {},
+        onPressed: () {
+          nextScreen = false;
+          setState(() {});
+        },
       ),
       MaterialButton(
         child: Text(
           Strings.menu_about,
           style: TextStyles.menu_item,
         ),
-        onPressed: () {},
+        onPressed: () {
+          nextScreen = true;
+          setState(() {});
+        },
       ),
       MaterialButton(
         child: Text(
